@@ -1,7 +1,8 @@
 name: mobile_app_privacy
 description: "A new Flutter plugin project."
 version: 0.0.1
-homepage:
+homepage: https://www.github.com/cypherstack/mobile_app_privacy
+repository: https://www.github.com/cypherstack/mobile_app_privacy
 
 environment:
   sdk: ^3.9.2

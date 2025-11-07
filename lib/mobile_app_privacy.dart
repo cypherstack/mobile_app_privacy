@@ -1,8 +1,40 @@
+import 'dart:ui';
 
 import 'mobile_app_privacy_platform_interface.dart';
+
+class IconAsset {
+  final String assetPath;
+  final double width, height;
+
+  IconAsset({
+    required this.assetPath,
+    required this.width,
+    required this.height,
+  });
+
+  Map<String, dynamic> toMap() => {
+    "assetPath": assetPath,
+    "width": width,
+    "height": height,
+  };
+
+  @override
+  String toString() => toMap().toString();
+}
 
 class MobileAppPrivacy {
   Future<String?> getPlatformVersion() {
     return MobileAppPrivacyPlatform.instance.getPlatformVersion();
   }
+
+  Future<void> enableOverlay({
+    Color color = const Color(0xFFFFFFFF),
+    IconAsset? iconAsset,
+  }) => MobileAppPrivacyPlatform.instance.enableOverlay(
+    color: color,
+    iconAsset: iconAsset,
+  );
+
+  Future<void> disableOverlay() =>
+      MobileAppPrivacyPlatform.instance.disableOverlay();
 }
