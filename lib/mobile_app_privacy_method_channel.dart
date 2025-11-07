@@ -19,11 +19,15 @@ class MethodChannelMobileAppPrivacy extends MobileAppPrivacyPlatform {
   }
 
   @override
-  Future<void> enableOverlay({Color? color, IconAsset? iconAsset}) =>
-      methodChannel.invokeMethod('enableOverlay', {
-        "color": color?.toARGB32(),
-        "iconAsset": iconAsset?.toMap(),
-      });
+  Future<void> enableOverlay({
+    Color? color,
+    IconAsset? iconAsset,
+    bool? blurInsteadOfColor,
+  }) => methodChannel.invokeMethod('enableOverlay', {
+    "color": color?.toARGB32(),
+    "iconAsset": iconAsset?.toMap(),
+    "blur": blurInsteadOfColor,
+  });
 
   @override
   Future<void> disableOverlay() => methodChannel.invokeMethod('disableOverlay');

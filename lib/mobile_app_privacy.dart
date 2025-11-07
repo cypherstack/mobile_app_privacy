@@ -28,12 +28,15 @@ class MobileAppPrivacy {
     return MobileAppPrivacyPlatform.instance.getPlatformVersion();
   }
 
+  /// [blurInsteadOfColor] is currently ignored on android
   Future<void> enableOverlay({
     Color color = const Color(0xFFFFFFFF),
     IconAsset? iconAsset,
+    bool? blurInsteadOfColor,
   }) => MobileAppPrivacyPlatform.instance.enableOverlay(
     color: color,
     iconAsset: iconAsset,
+    blurInsteadOfColor: blurInsteadOfColor,
   );
 
   Future<void> disableOverlay() =>

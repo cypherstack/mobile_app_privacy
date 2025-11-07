@@ -30,7 +30,11 @@ abstract class MobileAppPrivacyPlatform extends PlatformInterface {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-  Future<void> enableOverlay({Color? color, IconAsset? iconAsset}) {
+  Future<void> enableOverlay({
+    Color? color,
+    IconAsset? iconAsset,
+    bool? blurInsteadOfColor,
+  }) {
     throw UnimplementedError('enableOverlay() has not been implemented.');
   }
 

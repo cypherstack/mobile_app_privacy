@@ -22,6 +22,7 @@ public class MobileAppPrivacyPlugin: NSObject, FlutterPlugin {
         case "enableOverlay":
             let args = call.arguments as? [String: Any]
             let colorValue = args?["color"] as? Int ?? 0xFF00FF00
+            let blur = args?["blur"] as? Bool ?? false
             let imageInfo = args?["iconAsset"] as? [String: Any]
             let color = uiColor(fromArgb: UInt(colorValue))
             
@@ -30,7 +31,7 @@ public class MobileAppPrivacyPlugin: NSObject, FlutterPlugin {
                 return
             }
             
-            enableOverlay(color: color, imageInfo: imageInfo, registrar: registrar)
+            enableOverlay(color: color, imageInfo: imageInfo, blur: blur, registrar: registrar)
             result(nil)
             
         case "disableOverlay":
@@ -44,7 +45,7 @@ public class MobileAppPrivacyPlugin: NSObject, FlutterPlugin {
     
     // MARK: - Overlay Handling with Optional Custom Image
     
-    private func enableOverlay(color: UIColor, imageInfo: [String:Any]?, registrar: FlutterPluginRegistrar) {
+    private func enableOverlay(color: UIColor, imageInfo: [String:Any]?, blur: Bool, registrar: FlutterPluginRegistrar) {
         guard let window = UIApplication.shared.connectedScenes
             .compactMap({ ($0 as? UIWindowScene)?.keyWindow })
             .first else { return }
@@ -54,8 +55,18 @@ public class MobileAppPrivacyPlugin: NSObject, FlutterPlugin {
         
         let container = UIView(frame: window.bounds)
         container.isUserInteractionEnabled = true
-        container.backgroundColor = color
         container.alpha = 0.0  // start invisible
+        
+        if blur {
+            // Apply blur effect if blur flag is true
+            let blurEffect = UIBlurEffect(style: .regular)
+            let blurView = UIVisualEffectView(effect: blurEffect)
+            blurView.frame = container.bounds
+            container.addSubview(blurView)
+        } else {
+            // Use color as background if no blur
+            container.backgroundColor = color
+        }
         
         // If an image path is provided, load the image and display it
         // If an image path is provided, load the image and display it
@@ -90,7 +101,6 @@ public class MobileAppPrivacyPlugin: NSObject, FlutterPlugin {
                 print("Invalid imageInfo data: missing or invalid 'iconAsset', 'width', or 'height'.")
             }
         }
-
         
         window.addSubview(container)
         overlayView = container

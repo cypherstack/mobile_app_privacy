@@ -19,7 +19,11 @@ class MockMobileAppPrivacyPlatform
   }
 
   @override
-  Future<void> enableOverlay({Color? color, IconAsset? iconAsset}) {
+  Future<void> enableOverlay({
+    Color? color,
+    IconAsset? iconAsset,
+    bool? blurInsteadOfColor,
+  }) {
     // TODO: implement enableOverlay
     throw UnimplementedError();
   }

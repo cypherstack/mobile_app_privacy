@@ -41,7 +41,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       _mobileAppPrivacyPlugin.disableOverlay();
     } else {
-      _mobileAppPrivacyPlugin.enableOverlay(color: Colors.grey);
+      _mobileAppPrivacyPlugin.enableOverlay(blurInsteadOfColor: true);
     }
   }
 
