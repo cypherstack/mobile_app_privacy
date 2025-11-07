@@ -37,4 +37,8 @@ abstract class MobileAppPrivacyPlatform extends PlatformInterface {
   Future<void> disableOverlay() {
     throw UnimplementedError('disableOverlay() has not been implemented.');
   }
+
+  Future<void> setFlagSecure(bool enable) {
+    throw UnimplementedError('setFlagSecure() has not been implemented.');
+  }
 }

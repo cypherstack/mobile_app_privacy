@@ -23,6 +23,12 @@ class MockMobileAppPrivacyPlatform
     // TODO: implement enableOverlay
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> setFlagSecure(bool enable) {
+    // TODO: implement setFlagSecure
+    throw UnimplementedError();
+  }
 }
 
 void main() {

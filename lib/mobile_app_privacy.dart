@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'mobile_app_privacy_platform_interface.dart';
@@ -37,4 +38,9 @@ class MobileAppPrivacy {
 
   Future<void> disableOverlay() =>
       MobileAppPrivacyPlatform.instance.disableOverlay();
+
+  /// Does nothing on iOS
+  Future<void> setFlagSecure(bool enable) => Platform.isAndroid
+      ? MobileAppPrivacyPlatform.instance.setFlagSecure(enable)
+      : Future.value();
 }

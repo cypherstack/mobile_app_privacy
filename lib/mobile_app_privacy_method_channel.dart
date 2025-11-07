@@ -27,4 +27,8 @@ class MethodChannelMobileAppPrivacy extends MobileAppPrivacyPlatform {
 
   @override
   Future<void> disableOverlay() => methodChannel.invokeMethod('disableOverlay');
+
+  @override
+  Future<void> setFlagSecure(bool enable) =>
+      methodChannel.invokeMethod('setFlagSecure', {"enable": enable});
 }
