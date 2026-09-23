@@ -12,12 +12,12 @@ let package = Package(
     ],
     dependencies: [
         .package(name: "FlutterFramework", path: "../FlutterFramework"),
-        // Pin the latest 3.x revision (2026-09-15) for reproducible builds.
+        // Pin SVGKit's CocoaLumberjack compatibility fix.
         // Includes newer device models, the privacy manifest, and the SwiftPM
         // Release assertion fix missing from the 3.0.0 tag.
         .package(
             url: "https://github.com/SVGKit/SVGKit.git",
-            revision: "9b573a08e7698149de1a0ed576f22f68f5a0e30b"
+            revision: "6002a0ff6b2d4405805395959b92b38aa24662cb"
         )
     ],
     targets: [
