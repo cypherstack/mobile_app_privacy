@@ -3,6 +3,8 @@ import 'dart:ui';
 
 import 'mobile_app_privacy_platform_interface.dart';
 
+export 'accessibility_sensitive.dart';
+
 class IconAsset {
   final String assetPath;
   final double width, height;
@@ -24,6 +26,14 @@ class IconAsset {
 }
 
 class MobileAppPrivacy {
+  Future<bool> setAccessibilityDataSensitive(bool enable) => Platform.isAndroid
+      ? MobileAppPrivacyPlatform.instance.setAccessibilityDataSensitive(enable)
+      : Future.value(false);
+
+  Future<bool> isAccessibilityDataSensitive() => Platform.isAndroid
+      ? MobileAppPrivacyPlatform.instance.isAccessibilityDataSensitive()
+      : Future.value(false);
+
   Future<String?> getPlatformVersion() {
     return MobileAppPrivacyPlatform.instance.getPlatformVersion();
   }

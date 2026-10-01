@@ -28,6 +28,7 @@ class MobileAppPrivacyPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
     private lateinit var binding: FlutterPlugin.FlutterPluginBinding
     private var activity: Activity? = null
     private var overlayView: View? = null
+    private val accessibilityPrivacy = AccessibilityPrivacy()
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "mobile_app_privacy")
@@ -37,6 +38,15 @@ class MobileAppPrivacyPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onMethodCall(call: MethodCall, result: Result) {
         when (call.method) {
+            "setAccessibilityDataSensitive" -> {
+                val enabled = call.argument<Any>("enable") as? Boolean
+                if (enabled == null) {
+                    result.error("invalid_argument", "enable must be a boolean", null)
+                } else {
+                    result.success(accessibilityPrivacy.setEnabled(enabled))
+                }
+            }
+            "isAccessibilityDataSensitive" -> result.success(accessibilityPrivacy.isEnabled())
             "getPlatformVersion" -> result.success("Android ${android.os.Build.VERSION.RELEASE}")
             "enableOverlay" -> {
                 val iconAsset = call.argument<Map<String, Any>>("iconAsset")
@@ -70,6 +80,7 @@ class MobileAppPrivacyPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
+        accessibilityPrivacy.detach()
     }
 
     private fun enableOverlay(color: Int, iconAsset: Map<String, Any>?) {
@@ -163,17 +174,21 @@ class MobileAppPrivacyPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity
+        accessibilityPrivacy.attach(binding.activity)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
+        accessibilityPrivacy.detach()
         activity = null
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         activity = binding.activity
+        accessibilityPrivacy.attach(binding.activity)
     }
 
     override fun onDetachedFromActivity() {
+        accessibilityPrivacy.detach()
         activity = null
     }
 }

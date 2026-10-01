@@ -26,6 +26,18 @@ abstract class MobileAppPrivacyPlatform extends PlatformInterface {
     _instance = instance;
   }
 
+  Future<bool> setAccessibilityDataSensitive(bool enable) {
+    throw UnimplementedError(
+      'setAccessibilityDataSensitive() has not been implemented.',
+    );
+  }
+
+  Future<bool> isAccessibilityDataSensitive() {
+    throw UnimplementedError(
+      'isAccessibilityDataSensitive() has not been implemented.',
+    );
+  }
+
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }

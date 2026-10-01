@@ -21,6 +21,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         applicationId = "com.cypherstack.mobile_app_privacy_example"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -41,4 +42,14 @@ android {
 
 flutter {
     source = "../.."
+}
+
+
+dependencies {
+    debugImplementation("androidx.test:runner:1.6.2")
+    debugImplementation("androidx.test:core:1.6.1")
+    debugImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation("junit:junit:4.13.2")
 }
