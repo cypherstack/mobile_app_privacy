@@ -3,8 +3,6 @@ import 'dart:ui';
 
 import 'mobile_app_privacy_platform_interface.dart';
 
-export 'accessibility_sensitive.dart';
-
 class IconAsset {
   final String assetPath;
   final double width, height;

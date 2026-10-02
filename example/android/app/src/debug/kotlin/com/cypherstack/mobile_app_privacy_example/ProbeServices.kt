@@ -34,7 +34,12 @@ class NonToolProbeService : ProbeService() {
     override fun onDestroy() { instance = null; super.onDestroy() }
 }
 
-class FragmentProbeActivity : io.flutter.embedding.android.FlutterFragmentActivity()
+class FragmentProbeActivity : io.flutter.embedding.android.FlutterFragmentActivity() {
+    override fun configureFlutterEngine(flutterEngine: io.flutter.embedding.engine.FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        flutterEngine.registerExamplePlatformChannel()
+    }
+}
 
 class AutoPolicyProbeActivity : android.app.Activity()
 class YesPolicyProbeActivity : android.app.Activity()

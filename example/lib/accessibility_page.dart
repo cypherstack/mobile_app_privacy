@@ -3,16 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mobile_app_privacy/mobile_app_privacy.dart';
 
-void main() => runApp(const MaterialApp(home: AccessibilityProbe()));
+import 'accessibility_sensitive.dart';
 
-class AccessibilityProbe extends StatefulWidget {
-  const AccessibilityProbe({super.key});
+class AccessibilityPage extends StatefulWidget {
+  const AccessibilityPage({super.key});
 
   @override
-  State<AccessibilityProbe> createState() => _AccessibilityProbeState();
+  State<AccessibilityPage> createState() => _AccessibilityPageState();
 }
 
-class _AccessibilityProbeState extends State<AccessibilityProbe> {
+class _AccessibilityPageState extends State<AccessibilityPage> {
   final privacy = MobileAppPrivacy();
   final controller = TextEditingController(text: 'private-probe-0');
   Timer? timer;
@@ -47,6 +47,7 @@ class _AccessibilityProbeState extends State<AccessibilityProbe> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Accessibility protection')),
     body: SafeArea(
       child: Column(
         children: [

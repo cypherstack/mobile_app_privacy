@@ -55,6 +55,7 @@ class AccessibilityPrivacyTest {
 
     private fun checkHost(host: Class<out Activity>) {
         ActivityScenario.launch<Activity>(Intent(context, host)).use { scenario ->
+            click("Accessibility protection")
             checkPhase(Build.VERSION.SDK_INT >= 34, "startup")
             click("Disable protection")
             await("Dart observed disabled host") { tool().tree().contains("filtered=false") }
@@ -69,6 +70,7 @@ class AccessibilityPrivacyTest {
             checkPhase(Build.VERSION.SDK_INT >= 34, "enabled")
             clearEvents()
             scenario.recreate()
+            click("Accessibility protection")
             checkPhase(Build.VERSION.SDK_INT >= 34, "recreated")
         }
     }
@@ -86,16 +88,27 @@ class AccessibilityPrivacyTest {
         await("$phase: tool receives input events") {
             tool().events.any { it.contains("private-probe") }
         }
+        if (Build.VERSION.SDK_INT >= 34) await("$phase: SDK lookup preserves tool access") {
+            tool().tree().contains("fallback-probe")
+        }
         if (!protected) await("$phase: non-tool positive control") {
             secret(nonTool().tree()) && nonTool().events.any { it.contains("private-probe") }
         }
         repeat(10) {
             val toolTree = tool().tree()
             val otherTree = nonTool().tree()
-            assertFalse("$phase: fallback visible to tool", toolTree.contains("fallback-probe"))
-            assertFalse("$phase: fallback visible to non-tool", otherTree.contains("fallback-probe"))
-            for (service in listOf(tool(), nonTool())) {
-                assertFalse("$phase: fallback event leaked", service.events.any { it.contains("fallback-probe") })
+            if (Build.VERSION.SDK_INT < 34) {
+                assertFalse("$phase: fallback visible to tool", toolTree.contains("fallback-probe"))
+                assertFalse("$phase: fallback visible to non-tool", otherTree.contains("fallback-probe"))
+                for (service in listOf(tool(), nonTool())) {
+                    assertFalse("$phase: fallback event leaked", service.events.any { it.contains("fallback-probe") })
+                }
+            } else {
+                assertTrue("$phase: fallback accessible to tool", toolTree.contains("fallback-probe"))
+                assertEquals("$phase: fallback follows native policy", !protected,
+                    otherTree.contains("fallback-probe"))
+                if (protected) assertFalse("$phase: fallback event leaked to non-tool",
+                    nonTool().events.any { it.contains("fallback-probe") })
             }
             if (protected) {
                 assertFalse("$phase: non-tool queried secrets: $otherTree", secret(otherTree))
