@@ -11,6 +11,17 @@
         <activity android:name=".FragmentProbeActivity" android:exported="false"
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode" />
+        <activity android:name=".AutoPolicyProbeActivity" android:exported="false" />
+        <activity android:name=".YesPolicyProbeActivity" android:exported="false">
+            <meta-data
+                android:name="com.cypherstack.mobile_app_privacy.ACCESSIBILITY_DATA_SENSITIVE_RESTORE_MODE"
+                android:value="yes" />
+        </activity>
+        <activity android:name=".NoPolicyProbeActivity" android:exported="false">
+            <meta-data
+                android:name="com.cypherstack.mobile_app_privacy.ACCESSIBILITY_DATA_SENSITIVE_RESTORE_MODE"
+                android:value="no" />
+        </activity>
         <service android:name=".ToolProbeService" android:exported="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter><action android:name="android.accessibilityservice.AccessibilityService" /></intent-filter>

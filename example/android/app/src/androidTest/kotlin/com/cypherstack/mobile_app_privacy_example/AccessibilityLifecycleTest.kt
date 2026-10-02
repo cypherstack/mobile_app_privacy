@@ -3,6 +3,7 @@ package com.cypherstack.mobile_app_privacy_example
 import android.app.Activity
 import android.content.Intent
 import android.os.Build
+import android.os.Looper
 import android.view.View
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
@@ -12,6 +13,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.lang.reflect.Proxy
 import org.junit.Assert.*
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 
 class AccessibilityLifecycleTest {
@@ -19,7 +21,7 @@ class AccessibilityLifecycleTest {
 
     private fun call(plugin: MobileAppPrivacyPlugin, method: String, value: Any? = null): Any? {
         var response: Any? = "no reply"
-        instrumentation.runOnMainSync {
+        val invoke = Runnable {
             plugin.onMethodCall(MethodCall(method, value?.let { mapOf("enable" to it) }),
                 object : MethodChannel.Result {
                     override fun success(result: Any?) { response = result }
@@ -27,6 +29,8 @@ class AccessibilityLifecycleTest {
                     override fun notImplemented() { response = "not implemented" }
                 })
         }
+        if (Looper.myLooper() == Looper.getMainLooper()) invoke.run()
+        else instrumentation.runOnMainSync(invoke)
         return response
     }
 
@@ -70,8 +74,8 @@ class AccessibilityLifecycleTest {
     @Test fun disablingPreservesPreexistingHostProtection() {
         val plugin = MobileAppPrivacyPlugin()
         call(plugin, "setAccessibilityDataSensitive", false)
-        val intent = Intent(instrumentation.targetContext, MainActivity::class.java)
-        ActivityScenario.launch<MainActivity>(intent).use { scenario ->
+        val intent = Intent(instrumentation.targetContext, YesPolicyProbeActivity::class.java)
+        ActivityScenario.launch<YesPolicyProbeActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
                 if (Build.VERSION.SDK_INT >= 34) activity.window.decorView
                     .setAccessibilityDataSensitive(View.ACCESSIBILITY_DATA_SENSITIVE_YES)
@@ -81,4 +85,86 @@ class AccessibilityLifecycleTest {
             instrumentation.runOnMainSync { plugin.onDetachedFromActivity() }
         }
     }
+
+    private fun withPolicyHost(host: Class<out Activity>, check: (Activity) -> Unit) {
+        assumeTrue(Build.VERSION.SDK_INT >= 34)
+        val intent = Intent(instrumentation.targetContext, host)
+        ActivityScenario.launch<Activity>(intent).use { scenario ->
+            scenario.onActivity { check(it) }
+        }
+    }
+
+    @Test fun disablingAfterReattachingSameViewRestoresPolicy() =
+        withPolicyHost(AutoPolicyProbeActivity::class.java) { activity ->
+            val plugin = MobileAppPrivacyPlugin()
+            plugin.onAttachedToActivity(binding(activity))
+            val view = activity.window.decorView
+            assertTrue(view.isAccessibilityDataSensitive)
+            plugin.onDetachedFromActivity()
+            assertTrue("Departing view stays protected", view.isAccessibilityDataSensitive)
+            plugin.onAttachedToActivity(binding(activity))
+            assertEquals(false, call(plugin, "setAccessibilityDataSensitive", false))
+            plugin.onDetachedFromActivity()
+        }
+
+    @Test fun disableWhileDetachedTakesEffectWhenSameViewReturns() =
+        withPolicyHost(AutoPolicyProbeActivity::class.java) { activity ->
+            val plugin = MobileAppPrivacyPlugin()
+            plugin.onAttachedToActivity(binding(activity))
+            plugin.onDetachedFromActivityForConfigChanges()
+            assertEquals(false, call(plugin, "setAccessibilityDataSensitive", false))
+            assertTrue(activity.window.decorView.isAccessibilityDataSensitive)
+            plugin.onReattachedToActivityForConfigChanges(binding(activity))
+            assertEquals(false, call(plugin, "isAccessibilityDataSensitive"))
+            plugin.onDetachedFromActivity()
+        }
+
+    @Test fun replacementPluginCanReleaseOverrideOnSameView() =
+        withPolicyHost(AutoPolicyProbeActivity::class.java) { activity ->
+            val first = MobileAppPrivacyPlugin()
+            first.onAttachedToActivity(binding(activity))
+            first.onDetachedFromActivity()
+            val replacement = MobileAppPrivacyPlugin()
+            replacement.onAttachedToActivity(binding(activity))
+            assertEquals(false, call(replacement, "setAccessibilityDataSensitive", false))
+            replacement.onDetachedFromActivity()
+        }
+
+    @Test fun explicitNoSurvivesEnableDisableWithObscuredTouchFiltering() =
+        withPolicyHost(NoPolicyProbeActivity::class.java) { activity ->
+            val view = activity.window.decorView
+            view.filterTouchesWhenObscured = true
+            view.setAccessibilityDataSensitive(View.ACCESSIBILITY_DATA_SENSITIVE_NO)
+            val plugin = MobileAppPrivacyPlugin()
+            plugin.onAttachedToActivity(binding(activity))
+            assertTrue(view.isAccessibilityDataSensitive)
+            assertEquals(false, call(plugin, "setAccessibilityDataSensitive", false))
+            plugin.onDetachedFromActivity()
+        }
+
+    @Test fun inferredYesReturnsToAutoAfterEnableDisable() =
+        withPolicyHost(AutoPolicyProbeActivity::class.java) { activity ->
+            val view = activity.window.decorView
+            view.filterTouchesWhenObscured = true
+            view.setAccessibilityDataSensitive(View.ACCESSIBILITY_DATA_SENSITIVE_AUTO)
+            val plugin = MobileAppPrivacyPlugin()
+            plugin.onAttachedToActivity(binding(activity))
+            assertEquals(true, call(plugin, "setAccessibilityDataSensitive", false))
+            view.filterTouchesWhenObscured = false
+            assertFalse("AUTO must still respond to host policy changes", view.isAccessibilityDataSensitive)
+            plugin.onDetachedFromActivity()
+        }
+
+    @Test fun explicitYesSurvivesEnableDisable() =
+        withPolicyHost(YesPolicyProbeActivity::class.java) { activity ->
+            val view = activity.window.decorView
+            view.setAccessibilityDataSensitive(View.ACCESSIBILITY_DATA_SENSITIVE_YES)
+            val plugin = MobileAppPrivacyPlugin()
+            plugin.onAttachedToActivity(binding(activity))
+            assertEquals(true, call(plugin, "setAccessibilityDataSensitive", false))
+            view.filterTouchesWhenObscured = true
+            view.filterTouchesWhenObscured = false
+            assertTrue(view.isAccessibilityDataSensitive)
+            plugin.onDetachedFromActivity()
+        }
 }

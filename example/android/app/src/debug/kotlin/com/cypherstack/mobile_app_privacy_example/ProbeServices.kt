@@ -35,3 +35,7 @@ class NonToolProbeService : ProbeService() {
 }
 
 class FragmentProbeActivity : io.flutter.embedding.android.FlutterFragmentActivity()
+
+class AutoPolicyProbeActivity : android.app.Activity()
+class YesPolicyProbeActivity : android.app.Activity()
+class NoPolicyProbeActivity : android.app.Activity()
