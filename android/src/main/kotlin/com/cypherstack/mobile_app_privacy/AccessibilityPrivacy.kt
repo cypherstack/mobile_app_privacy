@@ -9,7 +9,8 @@ import java.util.WeakHashMap
 internal class AccessibilityPrivacy {
     private var requested: Boolean? = null
     private var root: View? = null
-    private var restoreMode = View.ACCESSIBILITY_DATA_SENSITIVE_AUTO
+    // A token avoids retaining this instance (and its root) through the weak map.
+    private val owner = Any()
 
     @Suppress("DEPRECATION")
     fun attach(activity: Activity) {
@@ -22,7 +23,7 @@ internal class AccessibilityPrivacy {
         )
         val configuredMode = activityInfo.metaData?.get(RESTORE_METADATA_KEY)
             ?: applicationInfo.metaData?.get(RESTORE_METADATA_KEY)
-        restoreMode = when (configuredMode) {
+        val restoreMode = when (configuredMode) {
             null, "auto" -> View.ACCESSIBILITY_DATA_SENSITIVE_AUTO
             "yes" -> View.ACCESSIBILITY_DATA_SENSITIVE_YES
             "no" -> View.ACCESSIBILITY_DATA_SENSITIVE_NO
@@ -30,7 +31,10 @@ internal class AccessibilityPrivacy {
                 "$RESTORE_METADATA_KEY must be auto, yes, or no"
             )
         }
-        root = activity.window.decorView
+        val view = activity.window.decorView
+        if (root !== view) detach()
+        root = view
+        overrides.getOrPut(view) { ViewState(restoreMode) }
         if (requested == null) {
             requested = applicationInfo.metaData?.getBoolean(METADATA_KEY, false) ?: false
         }
@@ -38,6 +42,18 @@ internal class AccessibilityPrivacy {
     }
 
     fun detach() {
+        root?.let { view ->
+            overrides[view]?.let { state ->
+                state.owners.remove(owner)
+                if (state.owners.isNotEmpty()) {
+                    reconcile(view, state)
+                } else if (!state.applied) {
+                    overrides.remove(view)
+                }
+                // With no attached owners, keep departing views protected and
+                // retain their restoration mode for a later attachment.
+            }
+        }
         root = null
     }
 
@@ -53,14 +69,25 @@ internal class AccessibilityPrivacy {
     private fun apply() {
         if (Build.VERSION.SDK_INT < 34) return
         val view = root ?: return
-        if (requested == true) {
-            if (!overrides.containsKey(view)) overrides[view] = restoreMode
+        val state = overrides[view] ?: return
+        state.owners[owner] = requested == true
+        reconcile(view, state)
+    }
+
+    private fun reconcile(view: View, state: ViewState) {
+        if (Build.VERSION.SDK_INT < 34) return
+        if (state.owners.values.any { it }) {
             view.setAccessibilityDataSensitive(View.ACCESSIBILITY_DATA_SENSITIVE_YES)
-        } else {
-            val mode = overrides[view] ?: return
-            view.setAccessibilityDataSensitive(mode)
-            overrides.remove(view)
+            state.applied = true
+        } else if (state.applied) {
+            view.setAccessibilityDataSensitive(state.restoreMode)
+            state.applied = false
         }
+    }
+
+    private class ViewState(val restoreMode: Int) {
+        val owners = mutableMapOf<Any, Boolean>()
+        var applied = false
     }
 
     companion object {
@@ -70,6 +97,6 @@ internal class AccessibilityPrivacy {
             "com.cypherstack.mobile_app_privacy.ACCESSIBILITY_DATA_SENSITIVE_RESTORE_MODE"
 
         // Main thread only.
-        private val overrides = WeakHashMap<View, Int>()
+        private val overrides = WeakHashMap<View, ViewState>()
     }
 }

@@ -43,8 +43,8 @@ class AccessibilityLifecycleTest {
         val plugin = MobileAppPrivacyPlugin()
         assertEquals(false, call(plugin, "isAccessibilityDataSensitive"))
         assertEquals(false, call(plugin, "setAccessibilityDataSensitive", true))
-        val intent = Intent(instrumentation.targetContext, MainActivity::class.java)
-        ActivityScenario.launch<MainActivity>(intent).use { scenario ->
+        val intent = Intent(instrumentation.targetContext, AutoPolicyProbeActivity::class.java)
+        ActivityScenario.launch<AutoPolicyProbeActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
                 if (Build.VERSION.SDK_INT >= 34) activity.window.decorView
                     .setAccessibilityDataSensitive(View.ACCESSIBILITY_DATA_SENSITIVE_AUTO)
@@ -55,7 +55,7 @@ class AccessibilityLifecycleTest {
             instrumentation.runOnMainSync { plugin.onDetachedFromActivityForConfigChanges() }
             assertEquals(false, call(plugin, "isAccessibilityDataSensitive"))
         }
-        ActivityScenario.launch<MainActivity>(intent).use { scenario ->
+        ActivityScenario.launch<AutoPolicyProbeActivity>(intent).use { scenario ->
             scenario.onActivity { activity ->
                 if (Build.VERSION.SDK_INT >= 34) activity.window.decorView
                     .setAccessibilityDataSensitive(View.ACCESSIBILITY_DATA_SENSITIVE_AUTO)
@@ -93,6 +93,59 @@ class AccessibilityLifecycleTest {
             scenario.onActivity { check(it) }
         }
     }
+
+    @Test fun disabledSecondInstanceCannotReleaseActiveProtection() =
+        withPolicyHost(AutoPolicyProbeActivity::class.java) { activity ->
+            val first = MobileAppPrivacyPlugin()
+            first.onAttachedToActivity(binding(activity))
+            val second = MobileAppPrivacyPlugin()
+            call(second, "setAccessibilityDataSensitive", false)
+            second.onAttachedToActivity(binding(activity))
+            assertTrue(activity.window.decorView.isAccessibilityDataSensitive)
+            assertEquals(true, call(second, "setAccessibilityDataSensitive", false))
+            assertEquals(true, call(first, "isAccessibilityDataSensitive"))
+            assertEquals(false, call(first, "setAccessibilityDataSensitive", false))
+            first.onDetachedFromActivity()
+            second.onDetachedFromActivity()
+        }
+
+    @Test fun everyProtectingInstanceMustReleaseItsRequest() =
+        withPolicyHost(AutoPolicyProbeActivity::class.java) { activity ->
+            val first = MobileAppPrivacyPlugin()
+            val second = MobileAppPrivacyPlugin()
+            first.onAttachedToActivity(binding(activity))
+            second.onAttachedToActivity(binding(activity))
+            assertEquals(true, call(first, "setAccessibilityDataSensitive", true))
+            assertEquals(true, call(first, "setAccessibilityDataSensitive", true))
+            assertEquals(true, call(first, "setAccessibilityDataSensitive", false))
+            assertEquals(false, call(second, "setAccessibilityDataSensitive", false))
+            first.onDetachedFromActivity()
+            second.onDetachedFromActivity()
+        }
+
+    @Test fun detachingAnOwnerDoesNotLeaveARequestOnAnActiveHost() =
+        withPolicyHost(AutoPolicyProbeActivity::class.java) { activity ->
+            val first = MobileAppPrivacyPlugin()
+            val second = MobileAppPrivacyPlugin()
+            first.onAttachedToActivity(binding(activity))
+            second.onAttachedToActivity(binding(activity))
+            first.onDetachedFromActivity()
+            assertTrue(activity.window.decorView.isAccessibilityDataSensitive)
+            assertEquals(false, call(second, "setAccessibilityDataSensitive", false))
+            second.onDetachedFromActivity()
+        }
+
+    @Test fun lastProtectingOwnerDetachingRestoresForRemainingDisabledHost() =
+        withPolicyHost(AutoPolicyProbeActivity::class.java) { activity ->
+            val first = MobileAppPrivacyPlugin()
+            val second = MobileAppPrivacyPlugin()
+            first.onAttachedToActivity(binding(activity))
+            call(second, "setAccessibilityDataSensitive", false)
+            second.onAttachedToActivity(binding(activity))
+            first.onDetachedFromActivity()
+            assertEquals(false, call(second, "isAccessibilityDataSensitive"))
+            second.onDetachedFromActivity()
+        }
 
     @Test fun disablingAfterReattachingSameViewRestoresPolicy() =
         withPolicyHost(AutoPolicyProbeActivity::class.java) { activity ->

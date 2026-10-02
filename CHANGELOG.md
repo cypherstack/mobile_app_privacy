@@ -1,3 +1,8 @@
+## Unreleased
+
+* Keep Android accessibility protection active while any attached plugin instance
+  requests it, including when another instance attaches with protection disabled.
+
 ## 0.0.4
 
 * **Breaking:** Require Flutter 3.44 and Dart 3.12 or later.
