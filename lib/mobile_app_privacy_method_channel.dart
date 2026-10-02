@@ -11,6 +11,18 @@ class MethodChannelMobileAppPrivacy extends MobileAppPrivacyPlatform {
   final methodChannel = const MethodChannel('mobile_app_privacy');
 
   @override
+  Future<bool> setAccessibilityDataSensitive(bool enable) async =>
+      await methodChannel.invokeMethod<bool>('setAccessibilityDataSensitive', {
+        'enable': enable,
+      }) ??
+      false;
+
+  @override
+  Future<bool> isAccessibilityDataSensitive() async =>
+      await methodChannel.invokeMethod<bool>('isAccessibilityDataSensitive') ??
+      false;
+
+  @override
   Future<String?> getPlatformVersion() async {
     final version = await methodChannel.invokeMethod<String>(
       'getPlatformVersion',

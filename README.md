@@ -1,15 +1,13 @@
 # mobile_app_privacy
 
-A new Flutter plugin project.
+Android 14+ startup: `com.cypherstack.mobile_app_privacy.ACCESSIBILITY_DATA_SENSITIVE=true` (application metadata).
 
-## Getting Started
+Restore policy: `com.cypherstack.mobile_app_privacy.ACCESSIBILITY_DATA_SENSITIVE_RESTORE_MODE` accepts `auto` (default), `yes`, or `no`; activity metadata overrides application metadata.
+Declare the host's actual policy; keep it unchanged while enabled.
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/to/develop-plugins),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+When plugin instances share a host view, protection stays enabled while any
+attached instance requests it. Disabling releases only that instance's request;
+the returned effective state can remain `true` because another instance needs protection.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
+An optional Android <14 semantics fallback lives in the [example app](example/README.md),
+not in the package API. It excludes screen readers as well as other accessibility services.

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_app_privacy/mobile_app_privacy.dart';
 
+import 'accessibility_page.dart';
+
 void main() {
   runApp(const MyApp());
 }
@@ -61,12 +63,22 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      routes: {'/accessibility': (_) => const AccessibilityPage()},
       home: Scaffold(
         appBar: AppBar(title: const Text('Plugin example app')),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [Text('Running on: $_platformVersion\n')],
+            children: [
+              Text('Running on: $_platformVersion\n'),
+              Builder(
+                builder: (context) => TextButton(
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed('/accessibility'),
+                  child: const Text('Accessibility protection'),
+                ),
+              ),
+            ],
           ),
         ),
       ),

@@ -1,6 +1,6 @@
 name: mobile_app_privacy
-description: "A new Flutter plugin project."
-version: 0.0.4
+description: "Privacy overlays, secure windows, and Android accessibility protection for Flutter apps."
+version: 0.0.5
 homepage: https://www.github.com/cypherstack/mobile_app_privacy
 repository: https://www.github.com/cypherstack/mobile_app_privacy
 

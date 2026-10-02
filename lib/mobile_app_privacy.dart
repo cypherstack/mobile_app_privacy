@@ -24,6 +24,14 @@ class IconAsset {
 }
 
 class MobileAppPrivacy {
+  Future<bool> setAccessibilityDataSensitive(bool enable) => Platform.isAndroid
+      ? MobileAppPrivacyPlatform.instance.setAccessibilityDataSensitive(enable)
+      : Future.value(false);
+
+  Future<bool> isAccessibilityDataSensitive() => Platform.isAndroid
+      ? MobileAppPrivacyPlatform.instance.isAccessibilityDataSensitive()
+      : Future.value(false);
+
   Future<String?> getPlatformVersion() {
     return MobileAppPrivacyPlatform.instance.getPlatformVersion();
   }
