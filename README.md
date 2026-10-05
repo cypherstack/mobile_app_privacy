@@ -11,3 +11,5 @@ the returned effective state can remain `true` because another instance needs pr
 
 An optional Android <14 semantics fallback lives in the [example app](example/README.md),
 not in the package API. It excludes screen readers as well as other accessibility services.
+
+See the [testing guide](example/README.md#testing) for host requirements and Android/iOS tests.

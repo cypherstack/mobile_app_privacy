@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.util.UUID
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -5,10 +8,20 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val privacyTarget = providers.gradleProperty("target").orNull?.let { file(it) }
+// `flutter test integration_test` builds a generated listener that imports the
+// test file by URI, so match the privacy suite's path in the target or its text.
+val privacySuite = Regex("""integration_test[\\/]android_privacy_test\.dart""")
+val privacySession = if (privacyTarget?.isFile == true &&
+    (privacySuite.containsMatchIn(privacyTarget.path) ||
+        privacySuite.containsMatchIn(privacyTarget.readText())))
+    UUID.randomUUID().toString() else ""
+
 android {
     namespace = "com.cypherstack.mobile_app_privacy_example"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
+    buildFeatures { buildConfig = true }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -32,12 +45,35 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "PRIVACY_TEST_SESSION", "\"$privacySession\"")
+        }
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+}
+
+val startPrivacyHost = tasks.register("startPrivacyTestHost") {
+    onlyIf { privacySession.isNotEmpty() }
+    doLast {
+        val properties = Properties().apply {
+            rootProject.file("local.properties").inputStream().use { load(it) }
+        }
+        val exe = if (System.getProperty("os.name").startsWith("Windows")) ".exe" else ""
+        val log = layout.buildDirectory.file("privacy-host-$privacySession.log").get().asFile
+        log.parentFile.mkdirs()
+        ProcessBuilder(
+            "${properties.getProperty("flutter.sdk")}/bin/cache/dart-sdk/bin/dart$exe",
+            "run", "tool/integration_host.dart", privacySession,
+            androidComponents.sdkComponents.adb.get().asFile.absolutePath
+        ).directory(file("../..")).redirectErrorStream(true).redirectOutput(log).start()
+    }
+}
+tasks.configureEach {
+    if (name == "assembleDebug") finalizedBy(startPrivacyHost)
 }
 
 flutter {
