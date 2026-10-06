@@ -56,6 +56,9 @@ background and bring it back. The helper waits up to two minutes for the suite,
 exits when the app exits, after 20 minutes, or on SIGINT or SIGTERM, and
 restores the emulator's original accessibility settings on the way out. Its log is written to
 `build/app/privacy-host-<session>.log`. The helper refuses physical devices.
+A helper that is killed outright leaves the probes enabled; the next run's
+helper removes them. Run one suite per emulator at a time: helpers on the same
+emulator share its settings, so one can switch the probes off under another.
 
 The native instrumentation tests cover the plugin in both Flutter activity
 embeddings. Use `android-x64` or `android-arm64` to match the emulator:

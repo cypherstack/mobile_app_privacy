@@ -75,19 +75,34 @@ class AccessibilitySettings {
     'accessibility_enabled',
   ];
 
+  static const probes = [
+    '$examplePackage/.ToolProbeService',
+    '$examplePackage/.NonToolProbeService',
+  ];
+
   Future<void> enableProbes() async {
     if (_previous.isNotEmpty) throw StateError('Settings already captured');
     final snapshot = <String, String>{};
     for (final key in keys) {
       snapshot[key] = await shell(['settings', 'get', 'secure', key]);
     }
+    // A helper that was killed, or one still running beside this one, may
+    // have left the probes enabled. They are never part of the original, so
+    // this helper's restore removes them either way.
+    final current = snapshot[keys.first]!;
+    final enabled = [
+      if (current != 'null' && current.isNotEmpty) ...current.split(':'),
+    ];
+    final others = [
+      for (final service in enabled)
+        if (!probes.contains(service)) service,
+    ];
+    if (others.length != enabled.length) {
+      snapshot[keys.first] = others.isEmpty ? 'null' : others.join(':');
+      if (others.isEmpty) snapshot[keys.last] = '0';
+    }
     _previous.addAll(snapshot);
-    final original = snapshot[keys.first]!;
-    final services = <String>{
-      if (original != 'null' && original.isNotEmpty) ...original.split(':'),
-      '$examplePackage/.ToolProbeService',
-      '$examplePackage/.NonToolProbeService',
-    };
+    final services = {...others, ...probes};
     await shell(['settings', 'put', 'secure', keys.first, services.join(':')]);
     await shell(['settings', 'put', 'secure', keys.last, '1']);
   }

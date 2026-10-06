@@ -245,11 +245,42 @@ void main() {
     skip: Platform.isWindows ? 'Windows has no SIGTERM' : false,
     timeout: const Timeout(Duration(minutes: 2)),
   );
+
+  for (final (leftover, services, enabled) in [
+    ('other/.Reader:$_probes', 'other/.Reader', '1'),
+    (_probes, null, '0'),
+  ]) {
+    test(
+      'probes left by another helper are not restored ($leftover)',
+      () async {
+        final adb = FakeAdb();
+        adb.settings['enabled_accessibility_services'] = leftover;
+        final host = runPrivacyHost(
+          'test-session',
+          discoverDevices: () async => [adb],
+          pollInterval: const Duration(milliseconds: 1),
+        );
+        await adb.ready.future.timeout(const Duration(seconds: 5));
+        expect(
+          adb.settings['enabled_accessibility_services']!.split(':'),
+          hasLength(services == null ? 2 : 3),
+          reason: 'Probes must be enabled once each',
+        );
+        adb.request = {'session': 'test-session', 'id': 2, 'command': 'finish'};
+        await host.timeout(const Duration(seconds: 5));
+        expect(adb.settings['enabled_accessibility_services'], services);
+        expect(adb.settings['accessibility_enabled'], enabled);
+      },
+    );
+  }
 }
 
 // Stands in for adb when a test runs the host as a real process. State lives
 // beside the script: one file per secure setting, plus cache/ for the request
 // and reply files the app would hold.
+const _probes =
+    '$examplePackage/.ToolProbeService:$examplePackage/.NonToolProbeService';
+
 const _fakeAdb = r'''
 #!/bin/sh
 state=$(dirname "$0")
