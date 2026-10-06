@@ -7,19 +7,38 @@ import 'support/android_host.dart';
 Future<void> main(List<String> args) async {
   final session = args[0];
   final executable = args[1];
-  await runPrivacyHost(
-    session,
-    discoverDevices: () async {
-      final devices = await runProcess(executable, ['devices']);
-      if (devices.exitCode != 0) throw StateError('${devices.stderr}');
-      return [
-        for (final line in '${devices.stdout}'.split('\n'))
-          if (RegExp(r'^(\S+)\s+device$').firstMatch(line.trim())
-              case final match?)
-            Adb(executable, match[1]!),
-      ];
-    },
-  );
+  // A cancelled job signals the host; leave through the restoring path
+  // instead of dying with the probes enabled. Windows has no SIGTERM.
+  final stop = Completer<void>();
+  final signals = [
+    for (final signal in [
+      ProcessSignal.sigint,
+      if (!Platform.isWindows) ProcessSignal.sigterm,
+    ])
+      signal.watch().listen((_) {
+        if (!stop.isCompleted) stop.complete();
+      }),
+  ];
+  try {
+    await runPrivacyHost(
+      session,
+      stop: stop.future,
+      discoverDevices: () async {
+        final devices = await runProcess(executable, ['devices']);
+        if (devices.exitCode != 0) throw StateError('${devices.stderr}');
+        return [
+          for (final line in '${devices.stdout}'.split('\n'))
+            if (RegExp(r'^(\S+)\s+device$').firstMatch(line.trim())
+                case final match?)
+              Adb(executable, match[1]!),
+        ];
+      },
+    );
+  } finally {
+    for (final subscription in signals) {
+      await subscription.cancel();
+    }
+  }
 }
 
 Future<void> runPrivacyHost(
@@ -28,6 +47,7 @@ Future<void> runPrivacyHost(
   Duration startupTimeout = const Duration(minutes: 2),
   Duration maxLifetime = const Duration(minutes: 20),
   Duration pollInterval = const Duration(milliseconds: 200),
+  Future<void>? stop,
 }) async {
   Adb? device;
   AccessibilitySettings? settings;
@@ -35,6 +55,8 @@ Future<void> runPrivacyHost(
   var lastId = 0;
   var finished = false;
   final startup = Stopwatch()..start();
+  var stopped = false;
+  stop?.whenComplete(() => stopped = true);
 
   Future<Map<String, dynamic>?> request(Adb adb) async {
     try {
@@ -71,6 +93,7 @@ Future<void> runPrivacyHost(
     // tests and debugger pauses need not send host commands to keep it alive.
     // The lifetime cap bounds an interrupted run whose app never exits.
     while (!finished &&
+        !stopped &&
         startup.elapsed < maxLifetime &&
         (enabled || startup.elapsed < startupTimeout)) {
       if (device == null) {
@@ -145,7 +168,11 @@ Future<void> runPrivacyHost(
     }
   } finally {
     await settings?.restore();
-    if (!finished && startup.elapsed >= maxLifetime) {
+    if (stopped) {
+      stderr.writeln(
+        'Host session $session was stopped before the suite finished.',
+      );
+    } else if (!finished && startup.elapsed >= maxLifetime) {
       stderr.writeln(
         'Host session $session ran for ${maxLifetime.inMinutes} minutes '
         'without a finish command.',

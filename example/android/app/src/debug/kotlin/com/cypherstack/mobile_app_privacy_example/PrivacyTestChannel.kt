@@ -3,6 +3,7 @@ package com.cypherstack.mobile_app_privacy_example
 import android.app.Activity
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
+import android.os.SystemClock
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.ImageView
@@ -17,11 +18,7 @@ internal fun FlutterEngine.registerPrivacyTestChannel(activity: Activity) {
                     "id" to BuildConfig.PRIVACY_TEST_SESSION,
                     "directory" to activity.cacheDir.absolutePath
                 ))
-                "clearEvents" -> {
-                    ToolProbeService.instance?.events?.clear()
-                    NonToolProbeService.instance?.events?.clear()
-                    result.success(null)
-                }
+                "uptime" -> result.success(SystemClock.uptimeMillis())
                 "snapshot" -> {
                     val root = activity.window.decorView as ViewGroup
                     val last = root.getChildAt(root.childCount - 1) as? ViewGroup

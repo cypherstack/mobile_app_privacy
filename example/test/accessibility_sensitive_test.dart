@@ -79,48 +79,52 @@ void main() {
     }, variant: android);
   }
 
-  testWidgets('iOS preserves semantics without querying Android', (
-    tester,
-  ) async {
-    mockVersion(() async => throw StateError('Unexpected Android query'));
-    await pump(
-      tester,
-      const AccessibilitySensitive(child: Text('test-secret')),
-    );
-    expect(semantics(tester), contains('test-secret'));
-  }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+  testWidgets(
+    'iOS preserves semantics without querying Android',
+    (tester) async {
+      mockVersion(() async => throw StateError('Unexpected Android query'));
+      await pump(
+        tester,
+        const AccessibilitySensitive(child: Text('test-secret')),
+      );
+      expect(semantics(tester), contains('test-secret'));
+    },
+    variant: TargetPlatformVariant.only(TargetPlatform.iOS),
+  );
 
-  testWidgets('version lookup preserves input state and runs once per mount', (
-    tester,
-  ) async {
-    final version = Completer<int?>();
-    var calls = 0;
-    mockVersion(() {
-      calls++;
-      return version.future;
-    });
-    Widget build(String hint) => MaterialApp(
-      home: Scaffold(
-        body: AccessibilitySensitive(
-          hiddenLabel: 'Protected value',
-          child: TextField(decoration: InputDecoration(hintText: hint)),
+  testWidgets(
+    'version lookup preserves input state and runs once per mount',
+    (tester) async {
+      final version = Completer<int?>();
+      var calls = 0;
+      mockVersion(() {
+        calls++;
+        return version.future;
+      });
+      Widget build(String hint) => MaterialApp(
+        home: Scaffold(
+          body: AccessibilitySensitive(
+            hiddenLabel: 'Protected value',
+            child: TextField(decoration: InputDecoration(hintText: hint)),
+          ),
         ),
-      ),
-    );
-    await tester.pumpWidget(build('Before'));
-    await tester.enterText(find.byType(TextField), 'edited-secret');
-    final state = tester.state(find.byType(EditableText));
-    await tester.pump();
-    expect(semantics(tester), contains('Protected value'));
-    expect(semantics(tester), isNot(contains('edited-secret')));
-    version.complete(34);
-    await tester.pumpAndSettle();
-    expect(tester.state(find.byType(EditableText)), same(state));
-    expect(semantics(tester), contains('edited-secret'));
-    await tester.pumpWidget(build('After'));
-    expect(tester.state(find.byType(EditableText)), same(state));
-    expect(calls, 1);
-  }, variant: android);
+      );
+      await tester.pumpWidget(build('Before'));
+      await tester.enterText(find.byType(TextField), 'edited-secret');
+      final state = tester.state(find.byType(EditableText));
+      await tester.pump();
+      expect(semantics(tester), contains('Protected value'));
+      expect(semantics(tester), isNot(contains('edited-secret')));
+      version.complete(34);
+      await tester.pumpAndSettle();
+      expect(tester.state(find.byType(EditableText)), same(state));
+      expect(semantics(tester), contains('edited-secret'));
+      await tester.pumpWidget(build('After'));
+      expect(tester.state(find.byType(EditableText)), same(state));
+      expect(calls, 1);
+    },
+    variant: android,
+  );
 
   testWidgets('lookup errors keep sensitive semantics excluded', (
     tester,
