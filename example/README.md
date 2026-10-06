@@ -53,8 +53,8 @@ Building `integration_test/android_privacy_test.dart` makes the Gradle task
 `startPrivacyTestHost` launch `tool/integration_host.dart`, an ADB helper the
 suite uses to enable the probe accessibility services, send the app to the
 background and bring it back. The helper waits up to two minutes for the suite,
-exits when the app exits or after 20 minutes, and restores the emulator's
-original accessibility settings on the way out. Its log is written to
+exits when the app exits, after 20 minutes, or on SIGINT or SIGTERM, and
+restores the emulator's original accessibility settings on the way out. Its log is written to
 `build/app/privacy-host-<session>.log`. The helper refuses physical devices.
 
 The native instrumentation tests cover the plugin in both Flutter activity
