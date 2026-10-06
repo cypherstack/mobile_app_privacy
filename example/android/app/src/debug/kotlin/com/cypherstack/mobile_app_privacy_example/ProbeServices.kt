@@ -6,9 +6,12 @@ import android.view.accessibility.AccessibilityNodeInfo
 import java.util.concurrent.CopyOnWriteArrayList
 
 abstract class ProbeService : AccessibilityService() {
+    // Each entry starts with the event's uptime so integration tests can keep
+    // events from a protection transition instead of clearing them.
     val events = CopyOnWriteArrayList<String>()
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        events.add((event.text + listOf(event.beforeText, event.contentDescription)).joinToString(" "))
+        val text = (event.text + listOf(event.beforeText, event.contentDescription)).joinToString(" ")
+        events.add("${event.eventTime} $text")
     }
     override fun onInterrupt() {}
     fun tree(): String {
