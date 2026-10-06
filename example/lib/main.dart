@@ -73,6 +73,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               Text('Running on: $_platformVersion\n'),
               Builder(
                 builder: (context) => TextButton(
+                  key: const ValueKey('open-accessibility'),
                   onPressed: () =>
                       Navigator.of(context).pushNamed('/accessibility'),
                   child: const Text('Accessibility protection'),
